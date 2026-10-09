@@ -15,6 +15,19 @@ from app.schemas.evaluation import (
     EvaluateRequest,
     EvaluationResponse,
 )
+from app.schemas.workflow import (
+    WorkflowSpecification,
+    ClarificationQuestion,
+    ClarificationQuestionsOutput,
+    QuestionAnswer,
+    CreateWorkflowRequest,
+    SubmitAnswersRequest,
+    UpdateWorkflowDraftRequest,
+    ApproveWorkflowRequest,
+    WorkflowVersionResponse,
+    WorkflowResponse,
+    WorkflowListResponse,
+)
 
 __all__ = [
     "ErrorDetail",
@@ -35,4 +48,15 @@ __all__ = [
     "EvaluationVerdict",
     "EvaluateRequest",
     "EvaluationResponse",
+    "WorkflowSpecification",
+    "ClarificationQuestion",
+    "ClarificationQuestionsOutput",
+    "QuestionAnswer",
+    "CreateWorkflowRequest",
+    "SubmitAnswersRequest",
+    "UpdateWorkflowDraftRequest",
+    "ApproveWorkflowRequest",
+    "WorkflowVersionResponse",
+    "WorkflowResponse",
+    "WorkflowListResponse",
 ]
