@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8000, alias="PORT")
     evaluator_provider: str = Field(default="auto", alias="EVALUATOR_PROVIDER")
-    evaluator_model: str = Field(default="gpt-4o-mini", alias="EVALUATOR_MODEL")
+    evaluator_model: str = Field(default="ollama/qwen3.5-4b", alias="EVALUATOR_MODEL")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_base_url: str | None = Field(default=None, alias="OPENAI_BASE_URL")
 
