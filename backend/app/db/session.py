@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from app.core.config import get_settings
 
@@ -23,7 +23,15 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db(target_engine=None) -> None:
     # Import all models so metadata knows about all tables
-    import app.models  # noqa: F401
+    from app import models as _models  # noqa: F401
 
     e = target_engine or engine
     Base.metadata.create_all(bind=e)
+
+    # Safe migration: ensure expected_workflow column exists on runs table
+    try:
+        with e.connect() as conn:
+            conn.execute(text("ALTER TABLE runs ADD COLUMN expected_workflow VARCHAR(2048)"))
+            conn.commit()
+    except Exception:
+        pass  # Column already exists

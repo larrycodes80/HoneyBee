@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.db.session import Base, get_db
 from app.main import app
+from app import models as _models  # noqa: F401
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 

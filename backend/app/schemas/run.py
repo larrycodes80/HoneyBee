@@ -17,6 +17,7 @@ class RunSchema(BaseModel):
     status: str
     created_at: datetime
     baseline_run_id: Optional[str] = None
+    expected_workflow: Optional[str] = None
     config: dict[str, Any] = Field(default_factory=dict)
     summary: RunSummarySchema = Field(
         default_factory=lambda: RunSummarySchema(
@@ -32,6 +33,7 @@ class RunSchema(BaseModel):
 class CreateRunRequest(BaseModel):
     scenario: str = "refund_safety"
     prompt: Optional[str] = None
+    expected_workflow: Optional[str] = None
 
 
 class RunDetailResponse(BaseModel):

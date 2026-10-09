@@ -10,6 +10,7 @@ import {
   Clock
 } from 'lucide-react';
 import type { Run, TraceEvent, AssertionResult } from '../../types';
+import { IntentEvaluationPanel } from './IntentEvaluationPanel';
 
 interface TimelinePaneProps {
   run: Run | null;
@@ -176,6 +177,13 @@ export const TimelinePane: React.FC<TimelinePaneProps> = ({
           </span>
         </div>
       )}
+
+      {/* Phase 3 Intent-Based Evaluation Engine Panel */}
+      <IntentEvaluationPanel
+        run={run}
+        events={events}
+        onSelectEvent={onSelectEvent}
+      />
 
       {/* Filter Strip */}
       <div className="timeline-filter-strip">

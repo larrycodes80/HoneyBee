@@ -19,6 +19,9 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
   const [prompt, setPrompt] = useState(
     'Always check fraud before issuing any refund.'
   );
+  const [expectedWorkflow, setExpectedWorkflow] = useState(
+    baselineRun?.expected_workflow || ''
+  );
   const [replayPolicy, setReplayPolicy] = useState('strict_match');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +34,10 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
     setError(null);
 
     try {
-      const response = await replayRun(baselineRun.id, { prompt });
+      const response = await replayRun(baselineRun.id, {
+        prompt,
+        expected_workflow: expectedWorkflow.trim() || undefined,
+      });
       onReplayComplete(baselineRun, response.run);
       onClose();
     } catch (err: any) {
@@ -126,6 +132,18 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 required
+              />
+            </div>
+
+            {/* Expected Workflow (Intent) */}
+            <div>
+              <label className="wb-form-label">Expected Workflow (Intent Specification)</label>
+              <textarea
+                className="wb-textarea"
+                rows={2}
+                value={expectedWorkflow}
+                onChange={(e) => setExpectedWorkflow(e.target.value)}
+                placeholder="Inherited from baseline or specify updated intent constraints..."
               />
             </div>
 

@@ -18,6 +18,11 @@ from app.schemas.ingest import (
     IngestRunPayload,
     IngestEventsResponse,
 )
+from app.schemas.evaluation import (
+    EvaluationVerdict,
+    EvaluateRequest,
+    EvaluationResponse,
+)
 
 __all__ = [
     "ErrorDetail",
@@ -41,4 +46,7 @@ __all__ = [
     "FinalizeRunRequest",
     "IngestRunPayload",
     "IngestEventsResponse",
+    "EvaluationVerdict",
+    "EvaluateRequest",
+    "EvaluationResponse",
 ]

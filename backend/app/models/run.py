@@ -20,6 +20,11 @@ class Run(Base):
         nullable=True,
         default=None,
     )
+    expected_workflow: Mapped[Optional[str]] = mapped_column(
+        String(2048),
+        nullable=True,
+        default=None,
+    )
     config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     summary: Mapped[dict[str, Any]] = mapped_column(
         JSON,
@@ -36,4 +41,10 @@ class Run(Base):
         back_populates="run",
         cascade="all, delete-orphan",
         order_by="TraceEvent.sequence",
+    )
+    evaluations: Mapped[list["Evaluation"]] = relationship(
+        "Evaluation",
+        back_populates="run",
+        cascade="all, delete-orphan",
+        order_by="Evaluation.created_at.desc()",
     )

@@ -28,6 +28,7 @@ export interface Run {
   status: RunStatus;
   created_at: string;
   baseline_run_id: string | null;
+  expected_workflow?: string | null;
   config: RunConfig;
   summary: RunSummary;
 }
@@ -59,11 +60,35 @@ export interface ListRunsResponse {
 export interface CreateRunPayload {
   scenario: string;
   prompt?: string;
+  expected_workflow?: string;
 }
 
 export interface ReplayRunPayload {
   prompt?: string;
+  expected_workflow?: string;
   config_overrides?: Record<string, any>;
+}
+
+export type EvaluationVerdict = 'PASS' | 'FAIL' | 'INCONCLUSIVE';
+
+export interface EvaluateRunPayload {
+  expected_workflow?: string;
+}
+
+export interface EvaluationResponse {
+  id: string;
+  run_id: string;
+  created_at: string;
+  verdict: EvaluationVerdict;
+  expected_workflow: string;
+  first_divergence_event_id?: string | null;
+  expected_behavior: string;
+  observed_behavior: string;
+  evidence_event_ids: string[];
+  reason: string;
+  suggested_correction: string;
+  limitations?: string | null;
+  evaluator_type: string;
 }
 
 export interface AssertionResult {
