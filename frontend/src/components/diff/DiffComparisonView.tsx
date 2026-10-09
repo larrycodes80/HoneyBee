@@ -40,9 +40,9 @@ export const DiffComparisonView: React.FC<DiffComparisonViewProps> = ({
         getRunDiff(baselineRunId, replayRunId)
       ]);
       setBaselineRun(baseRes.run);
-      setBaselineEvents(baseRes.events.sort((a, b) => a.sequence - b.sequence));
+      setBaselineEvents(baseRes.events.sort((a: TraceEvent, b: TraceEvent) => a.sequence - b.sequence));
       setReplayRun(replayRes.run);
-      setReplayEvents(replayRes.events.sort((a, b) => a.sequence - b.sequence));
+      setReplayEvents(replayRes.events.sort((a: TraceEvent, b: TraceEvent) => a.sequence - b.sequence));
       setDiff(diffRes);
     } catch (err: any) {
       setError(err?.message || 'Failed to compare runs');
