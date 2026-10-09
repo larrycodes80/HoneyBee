@@ -1,6 +1,6 @@
-# TraceForge — Frontend Engineering Specification
+# HoneyBee — Frontend Engineering Specification
 
-**Product:** TraceForge  
+**Product:** HoneyBee  
 **Stack:** React + Vite + TypeScript  
 **Styling:** Tailwind CSS + shadcn/ui  
 **API:** FastAPI  
@@ -10,7 +10,7 @@
 
 ## 1. Purpose
 
-The TraceForge frontend is a developer-focused interface for recording, inspecting, replaying, and comparing AI agent executions.
+The HoneyBee frontend is a developer-focused interface for recording, inspecting, replaying, and comparing AI agent executions.
 
 It must make the product's core workflow immediately understandable:
 

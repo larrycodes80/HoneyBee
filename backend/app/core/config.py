@@ -4,7 +4,7 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
-    database_url: str = Field(default="sqlite:///./traceforge.db", alias="DATABASE_URL")
+    database_url: str = Field(default="sqlite:///./honeybee.db", alias="DATABASE_URL")
     cors_origins: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173",
         alias="CORS_ORIGINS",

@@ -17,7 +17,7 @@ let forceFixtures = false;
 
 export function isForcingFixtures(): boolean {
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('traceforge_force_fixtures');
+    const stored = localStorage.getItem('honeybee_force_fixtures') ?? localStorage.getItem('traceforge_force_fixtures');
     if (stored !== null) {
       return stored === 'true';
     }
@@ -28,7 +28,7 @@ export function isForcingFixtures(): boolean {
 export function setForceFixtures(force: boolean): void {
   forceFixtures = force;
   if (typeof window !== 'undefined') {
-    localStorage.setItem('traceforge_force_fixtures', force ? 'true' : 'false');
+    localStorage.setItem('honeybee_force_fixtures', force ? 'true' : 'false');
   }
 }
 

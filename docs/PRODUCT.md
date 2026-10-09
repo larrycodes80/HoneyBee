@@ -1,12 +1,12 @@
-PRODUCT.md — TraceForge
+PRODUCT.md — HoneyBee
 
 1. Product Overview
-   TraceForge is a replay and debugging harness for AI agents. It records an agent run as an ordered trace, lets a developer replay the same scenario with a changed prompt or configuration, and compares the new trace against the original to identify where behavior diverged.
-   TraceForge is built for developers who need to understand not only that an agent failed, but which decision or tool interaction caused the failure.
+   HoneyBee is a replay and debugging harness for AI agents. It records an agent run as an ordered trace, lets a developer replay the same scenario with a changed prompt or configuration, and compares the new trace against the original to identify where behavior diverged.
+   HoneyBee is built for developers who need to understand not only that an agent failed, but which decision or tool interaction caused the failure.
    One-line pitch
    Record it. Replay it. Find the divergence.
    Hackathon demo
-   A refund agent issues a refund before checking the fraud status. TraceForge records the tool-call sequence, evaluates a safety assertion, then replays the scenario with a corrected prompt/configuration. The developer compares both traces, sees the first divergence, and checks whether the safety assertion now passes.
+   A refund agent issues a refund before checking the fraud status. HoneyBee records the tool-call sequence, evaluates a safety assertion, then replays the scenario with a corrected prompt/configuration. The developer compares both traces, sees the first divergence, and checks whether the safety assertion now passes.
    The hackathon version uses a deterministic mock agent and mock tools so the demo is repeatable and does not depend on an external LLM API.
 2. Problem
    Agent failures are difficult to debug because the final answer often hides the sequence of intermediate decisions and tool interactions that led to it. Re-running an agent may produce a different path, and comparing two runs manually is tedious.

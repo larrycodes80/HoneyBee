@@ -1,6 +1,6 @@
-# TraceForge — Product Requirements Document
+# HoneyBee — Product Requirements Document
 
-**Product:** TraceForge  
+**Product:** HoneyBee  
 **Tagline:** Replay. Compare. Debug AI agents.  
 **Category:** AI infrastructure / Agent reliability  
 **Hackathon track:** PS04 — Build the AI System Behind the AI  
@@ -11,18 +11,18 @@
 
 ## 1. Product Overview
 
-TraceForge is an open-source debugging and testing harness for tool-using AI agents.
+HoneyBee is an open-source debugging and testing harness for tool-using AI agents.
 
 It records agent executions, preserves the sequence of model decisions and tool interactions, replays saved scenarios with modified prompts or model configurations, and compares the resulting execution traces to identify behavioral differences.
 
-TraceForge helps developers answer four questions:
+HoneyBee helps developers answer four questions:
 
 1. What happened during this agent run?
 2. Where did the agent's behavior first diverge?
 3. Did changing the prompt or model improve the behavior?
 4. Does the new execution satisfy the expected behavioral constraints?
 
-TraceForge is not merely an observability dashboard. Its primary value is the ability to reproduce a scenario under controlled conditions and verify whether a change fixes an agent failure.
+HoneyBee is not merely an observability dashboard. Its primary value is the ability to reproduce a scenario under controlled conditions and verify whether a change fixes an agent failure.
 
 ### Product promise
 
@@ -49,7 +49,7 @@ This process is difficult because:
 - Existing logs do not necessarily provide a controlled replay mechanism.
 - Developers need to validate behavioral constraints, not just compare text.
 
-TraceForge addresses this problem by combining execution recording, controlled replay, structured trace comparison, and explicit behavioral assertions.
+HoneyBee addresses this problem by combining execution recording, controlled replay, structured trace comparison, and explicit behavioral assertions.
 
 ---
 
@@ -81,7 +81,7 @@ Small engineering teams that need a lightweight, locally runnable debugging harn
 
 An AI engineer has built an agent that can execute business operations through tools. The agent occasionally invokes tools in an unsafe order. The engineer wants to reproduce the failure, change the system prompt, and verify that the corrected agent respects the required execution order.
 
-TraceForge should make this workflow possible without requiring the developer to manually reconstruct the execution history.
+HoneyBee should make this workflow possible without requiring the developer to manually reconstruct the execution history.
 
 ---
 
@@ -135,7 +135,7 @@ The scenario is designed to expose a failure when the agent attempts a refund be
 
 ### Step 2: Record the execution
 
-TraceForge captures the execution events in order, including model requests, tool calls, tool results, errors, and the final response.
+HoneyBee captures the execution events in order, including model requests, tool calls, tool results, errors, and the final response.
 
 The resulting trace is saved and displayed in the interface.
 
@@ -151,13 +151,13 @@ The user changes the system prompt to explicitly require a fraud check before an
 
 ### Step 5: Replay the scenario
 
-TraceForge executes the scenario again using the updated prompt and the same controlled test conditions.
+HoneyBee executes the scenario again using the updated prompt and the same controlled test conditions.
 
 The replay receives a new run ID and retains a reference to the original baseline.
 
 ### Step 6: Compare the runs
 
-TraceForge compares the original and replayed executions.
+HoneyBee compares the original and replayed executions.
 
 The interface highlights:
 
@@ -174,7 +174,7 @@ The user evaluates the replay against a behavioral assertion:
 
 **A refund must not be issued until the fraud check has completed and returned a safe result.**
 
-TraceForge reports whether the assertion passed or failed.
+HoneyBee reports whether the assertion passed or failed.
 
 A successful replay must reflect actual execution events and a genuine assertion result.
 
@@ -235,7 +235,7 @@ The replay engine must support deterministic fixtures for known tool interaction
 
 A recorded result may be reused when the corresponding tool call matches the expected call under the replay policy.
 
-If a tool name or argument changes, TraceForge must not silently return an unrelated recorded result.
+If a tool name or argument changes, HoneyBee must not silently return an unrelated recorded result.
 
 Unmatched interactions must be flagged and handled using an explicit policy, such as a configured mock fixture or a safe failure.
 
@@ -289,7 +289,7 @@ A real LLM provider is an optional extension.
 
 Replay behavior is central to the product and must be explicitly defined.
 
-TraceForge distinguishes two operating modes.
+HoneyBee distinguishes two operating modes.
 
 ### Deterministic replay
 
@@ -624,7 +624,7 @@ These are future directions, not promises for the initial release.
 
 ## 16. Product Positioning
 
-TraceForge is an open-source replay and behavioral debugging harness for tool-using AI agents.
+HoneyBee is an open-source replay and behavioral debugging harness for tool-using AI agents.
 
 It helps developers move beyond inspecting an agent's final answer to investigating its execution, reproducing failures, comparing changes, and testing behavioral constraints.
 

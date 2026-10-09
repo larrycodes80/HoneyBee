@@ -1,7 +1,7 @@
 [project]
-name = "traceforge-backend"
+name = "honeybee-backend"
 version = "0.1.0"
-description = "TraceForge Backend - AI Agent Replay and Debugging Harness"
+description = "HoneyBee Backend - AI Agent Replay and Debugging Harness"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

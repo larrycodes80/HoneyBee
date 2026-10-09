@@ -1,6 +1,6 @@
-# TraceForge — Backend Engineering Specification
+# HoneyBee — Backend Engineering Specification
 
-**Product:** TraceForge  
+**Product:** HoneyBee  
 **Backend:** FastAPI + Python + SQLite  
 **Purpose:** Agent execution, trace recording, replay, behavioral diffing, and assertion evaluation  
 **Status:** Hackathon MVP  
@@ -10,7 +10,7 @@
 
 ## 1. Backend Objectives
 
-The backend is responsible for the core functionality of TraceForge.
+The backend is responsible for the core functionality of HoneyBee.
 
 It must:
 
@@ -57,7 +57,7 @@ SQLAlchemy and Alembic are not required for this hackathon MVP.
 ## 3. Suggested Directory Structure
 
 ```text
-traceforge/
+honeybee/
 ├── PRODUCT.md
 ├── BACKEND.md
 ├── README.md
@@ -921,4 +921,4 @@ The backend is ready for the hackathon demo when:
 - Errors and unmatched interactions are visible.
 - The frontend can complete the full workflow using the documented API.
 
-TraceForge's backend should prove one essential capability: **a developer can reproduce an agent scenario, change its behavior, and verify the difference using real execution traces.**
+HoneyBee's backend should prove one essential capability: **a developer can reproduce an agent scenario, change its behavior, and verify the difference using real execution traces.**

@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="TraceForge API",
+    title="HoneyBee API",
     description="Backend foundation for AI agent trace recording, replaying, and debugging",
     version="0.1.0",
     lifespan=lifespan,
