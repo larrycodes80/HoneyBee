@@ -17,6 +17,13 @@ from app.schemas.trace_event import TraceEventSchema
 from app.schemas.replay import ReplayRequest
 from app.schemas.diff import DiffResponse
 from app.schemas.assertions import AssertionResponse
+from app.schemas.ingest import (
+    InitRunRequest,
+    IngestEventsRequest,
+    FinalizeRunRequest,
+    IngestRunPayload,
+    IngestEventsResponse,
+)
 from app.services.trace_recorder import TraceRecorder
 from app.services.agent_executor import AgentExecutor, is_safe_policy
 from app.services.diff_engine import DiffEngine
@@ -98,6 +105,119 @@ def create_run(
     db.refresh(run)
 
     events = recorder.get_events()
+    return RunDetailResponse(
+        run=RunSchema.model_validate(run),
+        events=[TraceEventSchema.model_validate(e) for e in events],
+    )
+
+
+@router.post("/init", response_model=RunDetailResponse, status_code=status.HTTP_201_CREATED)
+def init_run(
+    body: InitRunRequest,
+    db: Session = Depends(get_db),
+) -> RunDetailResponse:
+    run_id = body.run_id or f"run_{uuid.uuid4().hex[:8]}"
+
+    existing = db.query(Run).filter(Run.id == run_id).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "RUN_ALREADY_EXISTS",
+                "message": f"Run with ID '{run_id}' already exists.",
+            },
+        )
+
+    config = {
+        "scenario": body.scenario or "custom_agent",
+        "prompt": body.prompt or "",
+        **(body.config or {}),
+    }
+    if body.workflow_id:
+        config["workflow_id"] = body.workflow_id
+    if body.workflow_version:
+        config["workflow_version"] = body.workflow_version
+
+    run = Run(
+        id=run_id,
+        status="running",
+        baseline_run_id=None,
+        config=config,
+        summary={
+            "event_count": 0,
+            "tool_call_count": 0,
+            "error_count": 0,
+        },
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+
+    return RunDetailResponse(
+        run=RunSchema.model_validate(run),
+        events=[],
+    )
+
+
+@router.post("/ingest", response_model=RunDetailResponse, status_code=status.HTTP_201_CREATED)
+def ingest_run(
+    body: IngestRunPayload,
+    db: Session = Depends(get_db),
+) -> RunDetailResponse:
+    run_id = body.run_id or f"run_{uuid.uuid4().hex[:8]}"
+    existing = db.query(Run).filter(Run.id == run_id).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "RUN_ALREADY_EXISTS",
+                "message": f"Run with ID '{run_id}' already exists.",
+            },
+        )
+
+    config = {
+        "scenario": body.scenario or "custom_agent",
+        **(body.config or {}),
+    }
+    if body.workflow_id:
+        config["workflow_id"] = body.workflow_id
+    if body.workflow_version:
+        config["workflow_version"] = body.workflow_version
+
+    run = Run(
+        id=run_id,
+        status=body.status,
+        baseline_run_id=None,
+        config=config,
+        summary={
+            "event_count": 0,
+            "tool_call_count": 0,
+            "error_count": 0,
+        },
+    )
+    db.add(run)
+    db.flush()
+
+    recorder = TraceRecorder(db=db, run=run)
+    for evt_data in body.events:
+        recorder.record_event(
+            type=evt_data.type,
+            name=evt_data.name,
+            input=evt_data.input if isinstance(evt_data.input, dict) else ({"value": evt_data.input} if evt_data.input is not None else None),
+            output=evt_data.output,
+            metadata=evt_data.metadata,
+            timestamp=evt_data.timestamp,
+        )
+
+    db.commit()
+    db.refresh(run)
+
+    events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
     return RunDetailResponse(
         run=RunSchema.model_validate(run),
         events=[TraceEventSchema.model_validate(e) for e in events],
@@ -241,6 +361,79 @@ def replay_run(
     events = recorder.get_events()
     return RunDetailResponse(
         run=RunSchema.model_validate(replay_run),
+        events=[TraceEventSchema.model_validate(e) for e in events],
+    )
+
+
+@router.post("/{run_id}/events", response_model=IngestEventsResponse)
+def ingest_events(
+    run_id: str,
+    body: IngestEventsRequest,
+    db: Session = Depends(get_db),
+) -> IngestEventsResponse:
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Run '{run_id}' was not found.",
+            },
+        )
+
+    if not body.events:
+        return IngestEventsResponse(status="ok", run_id=run_id, ingested_count=0)
+
+    recorder = TraceRecorder(db=db, run=run)
+    count = 0
+    for evt_data in body.events:
+        recorder.record_event(
+            type=evt_data.type,
+            name=evt_data.name,
+            input=evt_data.input if isinstance(evt_data.input, dict) else ({"value": evt_data.input} if evt_data.input is not None else None),
+            output=evt_data.output,
+            metadata=evt_data.metadata,
+            timestamp=evt_data.timestamp,
+        )
+        count += 1
+
+    db.commit()
+    return IngestEventsResponse(status="ok", run_id=run_id, ingested_count=count)
+
+
+@router.post("/{run_id}/finalize", response_model=RunDetailResponse)
+def finalize_run(
+    run_id: str,
+    body: FinalizeRunRequest,
+    db: Session = Depends(get_db),
+) -> RunDetailResponse:
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Run '{run_id}' was not found.",
+            },
+        )
+
+    run.status = body.status
+    if body.summary:
+        current_summary = dict(run.summary or {})
+        current_summary.update(body.summary)
+        run.summary = current_summary
+
+    db.commit()
+    db.refresh(run)
+
+    events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+    return RunDetailResponse(
+        run=RunSchema.model_validate(run),
         events=[TraceEventSchema.model_validate(e) for e in events],
     )
 
