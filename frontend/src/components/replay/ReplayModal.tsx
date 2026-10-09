@@ -19,6 +19,7 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
   const [prompt, setPrompt] = useState(
     'Always check fraud before issuing any refund.'
   );
+  const [replayPolicy, setReplayPolicy] = useState('strict_match');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,42 +35,38 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
       onReplayComplete(baselineRun, response.run);
       onClose();
     } catch (err: any) {
-      setError(err?.message || 'Failed to trigger replay');
+      setError(err?.message || 'Failed to trigger scenario replay');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleUsePreset = (preset: string) => {
-    setPrompt(preset);
-  };
-
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px' }}>
-        <div className="modal-header">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <RotateCcw size={18} color="var(--accent-amber)" />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-              Replay Scenario from #{baselineRun.id}
-            </h3>
+            <RotateCcw size={15} color="var(--warning)" />
+            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+              Replay Execution · Baseline #{baselineRun.id}
+            </span>
           </div>
-          <button onClick={onClose} className="btn btn-ghost" style={{ padding: '4px' }}>
-            <X size={18} />
+          <button onClick={onClose} className="wb-btn wb-btn-outline" style={{ padding: '2px 4px' }}>
+            <X size={12} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+          <div className="modal-body-area">
             {error && (
               <div
                 style={{
-                  background: 'rgba(244, 63, 94, 0.1)',
-                  border: '1px solid var(--accent-rose)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.75rem',
-                  color: 'var(--accent-rose)',
-                  fontSize: '0.85rem'
+                  background: 'var(--error-subtle)',
+                  border: '1px solid var(--error-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '6px 10px',
+                  color: 'var(--error)',
+                  fontSize: '0.75rem'
                 }}
               >
                 {error}
@@ -79,76 +76,86 @@ export const ReplayModal: React.FC<ReplayModalProps> = ({
             {/* Baseline Reference Info */}
             <div
               style={{
-                background: 'var(--bg-main)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.85rem 1rem',
-                fontSize: '0.8rem'
+                background: 'var(--bg-app)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '8px 10px',
+                fontSize: '0.75rem'
               }}
             >
-              <div style={{ color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 700 }}>
-                Baseline Source Run
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', fontWeight: 600 }}>
-                  {baselineRun.id} ({baselineRun.config?.scenario || 'refund_safety'})
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700 }}>
+                  Immutable Baseline Target
                 </span>
-                <span className="badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
-                  Baseline Will Remain Immutable
+                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}>
+                  {baselineRun.id}
                 </span>
               </div>
-              <div style={{ color: 'var(--text-secondary)', marginTop: '6px', fontStyle: 'italic' }}>
+              <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.72rem' }}>
                 Original prompt: "{baselineRun.config?.prompt}"
               </div>
             </div>
 
-            {/* Prompt Override Editor */}
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label">Modified Prompt for Replay</label>
-                <div style={{ display: 'flex', gap: '6px' }}>
+            {/* Editable Prompt */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <label className="wb-form-label">System Prompt Override</label>
+                <div style={{ display: 'flex', gap: '4px' }}>
                   <button
                     type="button"
-                    onClick={() => handleUsePreset('Always check fraud before issuing any refund.')}
-                    className="btn btn-ghost"
-                    style={{ fontSize: '0.7rem', padding: '2px 8px', color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.1)' }}
+                    onClick={() => setPrompt('Always check fraud before issuing any refund.')}
+                    className="wb-btn wb-btn-outline"
+                    style={{ fontSize: '0.68rem', padding: '1px 6px', color: 'var(--success)' }}
                   >
-                    <ShieldCheck size={12} /> Corrected Safe Prompt
+                    <ShieldCheck size={10} /> Safe Preset
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleUsePreset('Check fraud status before issuing a refund.')}
-                    className="btn btn-ghost"
-                    style={{ fontSize: '0.7rem', padding: '2px 8px', color: 'var(--accent-amber)', background: 'rgba(245, 158, 11, 0.1)' }}
+                    onClick={() => setPrompt('Check fraud status before issuing a refund.')}
+                    className="wb-btn wb-btn-outline"
+                    style={{ fontSize: '0.68rem', padding: '1px 6px', color: 'var(--warning)' }}
                   >
-                    Unsafe Prompt
+                    Unsafe Preset
                   </button>
                 </div>
               </div>
 
               <textarea
-                className="form-textarea"
+                className="wb-textarea"
+                rows={3}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                rows={4}
                 required
               />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Changing this prompt triggers the agent to evaluate the safety assertion order and test divergence.
+            </div>
+
+            {/* Replay Policy Selector */}
+            <div>
+              <label className="wb-form-label">Tool-Result Replay Policy</label>
+              <select
+                className="wb-input"
+                value={replayPolicy}
+                onChange={(e) => setReplayPolicy(e.target.value)}
+              >
+                <option value="strict_match">Controlled Fixtures · Strict Tool & Arg Matching</option>
+                <option value="deterministic_simulation">Deterministic Simulator (Zero External Side Effects)</option>
+              </select>
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                Tool results are re-evaluated based on actual prompt decisions to ensure verifiable divergence.
               </span>
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="button" onClick={onClose} className="btn btn-secondary" disabled={isSubmitting}>
+          <div className="modal-footer-bar">
+            <button type="button" onClick={onClose} className="wb-btn wb-btn-secondary" disabled={isSubmitting}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            <button type="submit" className="wb-btn wb-btn-primary" disabled={isSubmitting}>
               {isSubmitting ? (
                 'Executing Replay...'
               ) : (
                 <>
-                  <Sparkles size={16} /> Launch Replay & Diff
+                  <Sparkles size={12} fill="#07090e" /> Replay with Changes
                 </>
               )}
             </button>
