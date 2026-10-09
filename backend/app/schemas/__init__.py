@@ -10,6 +10,11 @@ from app.schemas.run import (
 from app.schemas.replay import ReplayRequest
 from app.schemas.diff import DiffChangeSchema, DiffSummarySchema, DiffResponse
 from app.schemas.assertions import AssertionResultSchema, AssertionResponse
+from app.schemas.evaluation import (
+    EvaluationVerdict,
+    EvaluateRequest,
+    EvaluationResponse,
+)
 
 __all__ = [
     "ErrorDetail",
@@ -27,4 +32,7 @@ __all__ = [
     "DiffResponse",
     "AssertionResultSchema",
     "AssertionResponse",
+    "EvaluationVerdict",
+    "EvaluateRequest",
+    "EvaluationResponse",
 ]

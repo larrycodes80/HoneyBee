@@ -1,12 +1,13 @@
 import uuid
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from typing import Annotated, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.db.session import get_db
 from app.models.run import Run
 from app.models.trace_event import TraceEvent
+from app.models.evaluation import Evaluation
 from app.schemas.run import (
     CreateRunRequest,
     RunDetailResponse,
@@ -17,10 +18,12 @@ from app.schemas.trace_event import TraceEventSchema
 from app.schemas.replay import ReplayRequest
 from app.schemas.diff import DiffResponse
 from app.schemas.assertions import AssertionResponse
+from app.schemas.evaluation import EvaluateRequest, EvaluationResponse
 from app.services.trace_recorder import TraceRecorder
 from app.services.agent_executor import AgentExecutor, is_safe_policy
 from app.services.diff_engine import DiffEngine
 from app.services.assertion_engine import AssertionEngine
+from app.services.evaluator_engine import EvaluatorEngine
 
 router = APIRouter(prefix="/api/runs", tags=["Runs"])
 
@@ -50,10 +53,12 @@ def create_run(
         id=run_id,
         status="running",
         baseline_run_id=None,
+        expected_workflow=body.expected_workflow,
         config={
             "scenario": body.scenario,
             "prompt": effective_prompt,
             "policy": policy_label,
+            "expected_workflow": body.expected_workflow,
         },
         summary={
             "event_count": 0,
@@ -181,11 +186,13 @@ def replay_run(
         effective_prompt = baseline_run.config.get("prompt", "Check fraud status before issuing a refund.")
         policy_label = baseline_run.config.get("policy", "unsafe_baseline")
 
+    effective_expected_workflow = body.expected_workflow or baseline_run.expected_workflow
     replay_config = {
         **baseline_run.config,
         "scenario": scenario,
         "prompt": effective_prompt,
         "policy": policy_label,
+        "expected_workflow": effective_expected_workflow,
         **(body.config_overrides or {}),
     }
 
@@ -195,6 +202,7 @@ def replay_run(
         id=replay_id,
         status="running",
         baseline_run_id=baseline_run.id,
+        expected_workflow=effective_expected_workflow,
         config=replay_config,
         summary={
             "event_count": 0,
@@ -321,3 +329,86 @@ def get_run_assertions(
 
     # 3. Evaluate behavioral assertions
     return AssertionEngine.evaluate_assertions(events=events, run_id=run_id)
+
+
+@router.post("/{run_id}/evaluate", response_model=EvaluationResponse)
+def evaluate_run_intent(
+    run_id: str,
+    body: Optional[EvaluateRequest] = None,
+    db: Session = Depends(get_db),
+) -> EvaluationResponse:
+    """
+    Phase 3: Intent-Based Evaluation Engine.
+    Compares the developer's expected workflow against the persisted execution trace.
+    Returns verdict (PASS, FAIL, INCONCLUSIVE), earliest divergence, evidence event IDs,
+    explanation, and suggested correction.
+    """
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Run '{run_id}' was not found.",
+            },
+        )
+
+    events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+
+    override_workflow = body.expected_workflow if body else None
+    return EvaluatorEngine.evaluate_run(
+        db=db,
+        run=run,
+        events=events,
+        expected_workflow_override=override_workflow,
+    )
+
+
+@router.get("/{run_id}/evaluation", response_model=EvaluationResponse)
+def get_run_evaluation(
+    run_id: str,
+    db: Session = Depends(get_db),
+) -> EvaluationResponse:
+    """
+    Retrieve the latest persisted evaluation result for a run.
+    If run has not been evaluated yet, performs evaluation on demand.
+    """
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Run '{run_id}' was not found.",
+            },
+        )
+
+    existing_eval = (
+        db.query(Evaluation)
+        .filter(Evaluation.run_id == run_id)
+        .order_by(Evaluation.created_at.desc())
+        .first()
+    )
+
+    if existing_eval:
+        return EvaluationResponse.model_validate(existing_eval)
+
+    # If no evaluation exists yet, run evaluation on demand
+    events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+
+    return EvaluatorEngine.evaluate_run(
+        db=db,
+        run=run,
+        events=events,
+        expected_workflow_override=None,
+    )
