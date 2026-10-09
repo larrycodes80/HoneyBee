@@ -689,7 +689,7 @@ export const WorkflowStudio: React.FC<WorkflowStudioProps> = ({ onWorkflowSelect
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: 360, marginTop: '4px' }}>
               Select an existing specification from the sidebar or click "New Specification" to draft
-              intended agent behavior with Gemma.
+              intended agent behavior with the AI workflow engine.
             </p>
             <button
               onClick={() => setIsCreatingNew(true)}

@@ -24,6 +24,7 @@ from app.services.ai_provider import (
     get_ai_provider,
     AIProvider,
     DigitalOceanGemmaProvider,
+    OllamaProvider,
     FakeGemmaProvider,
     AIProviderError,
     AIAuthenticationError,
@@ -152,7 +153,12 @@ class EvaluatorEngine:
                         events=serialized_events,
                         scenario_context=run.config,
                     )
-                    evaluator_type = "digitalocean_gemma" if isinstance(ai_provider, DigitalOceanGemmaProvider) else "deterministic_test_provider"
+                    if isinstance(ai_provider, OllamaProvider):
+                        evaluator_type = "ollama"
+                    elif isinstance(ai_provider, DigitalOceanGemmaProvider):
+                        evaluator_type = "digitalocean_gemma"
+                    else:
+                        evaluator_type = "deterministic_test_provider"
                 except (AIAuthenticationError, AIConfigurationError, AIProviderError) as exc:
                     # In test/dev environment, fallback to clearly labelled deterministic test provider
                     fake_provider = FakeGemmaProvider()
@@ -162,11 +168,17 @@ class EvaluatorEngine:
                         scenario_context=run.config,
                     )
                     evaluator_type = "deterministic_test_provider"
+                    provider_name = (
+                        "Ollama"
+                        if isinstance(ai_provider, OllamaProvider)
+                        else "DigitalOcean"
+                    )
                     audit_res.provider_metadata = {
                         "provider": "deterministic_test_provider",
+                        "target_provider": "ollama" if isinstance(ai_provider, OllamaProvider) else "digitalocean",
                         "fallback_reason": str(exc),
                         "real_inference_attempted": True,
-                        "note": "DigitalOcean endpoint contacted but credentials were unauthorized or missing; evaluated via deterministic test provider.",
+                        "note": f"{provider_name} was contacted or attempted but returned error or was offline; evaluated via deterministic test provider.",
                     }
 
                 if audit_res is not None:

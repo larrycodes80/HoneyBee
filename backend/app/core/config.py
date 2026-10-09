@@ -33,6 +33,20 @@ class Settings(BaseSettings):
         alias="DIGITALOCEAN_INFERENCE_TIMEOUT_SECONDS",
     )
 
+    # Ollama local inference settings (e.g. qwen3.5-4b)
+    ollama_base_url: str = Field(
+        default="http://localhost:11434",
+        alias="OLLAMA_BASE_URL",
+    )
+    ollama_model: str = Field(
+        default="qwen3.5-4b",
+        alias="OLLAMA_MODEL",
+    )
+    ollama_timeout_seconds: int = Field(
+        default=120,
+        alias="OLLAMA_TIMEOUT_SECONDS",
+    )
+
     @property
     def effective_digitalocean_key(self) -> str | None:
         key = self.digitalocean_inference_api_key or self.digitalocean_token

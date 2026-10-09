@@ -194,6 +194,24 @@ export const IntentEvaluationPanel: React.FC<IntentEvaluationPanelProps> = ({
   };
 
   const isLiveDigitalOcean = evaluation?.provider_metadata?.provider === 'digitalocean';
+  const isLiveOllama = evaluation?.provider_metadata?.provider === 'ollama';
+  const isLiveProvider = isLiveDigitalOcean || isLiveOllama;
+  const isTargetOllama = evaluation?.provider_metadata?.target_provider === 'ollama';
+  const ollamaModel = evaluation?.provider_metadata?.model || 'qwen3.5-4b';
+
+  const providerTitle = isLiveOllama
+    ? `Ollama ${ollamaModel} — Semantic Trace Audit`
+    : isLiveDigitalOcean
+    ? 'DigitalOcean Gemma 4 — Semantic Trace Audit'
+    : 'AI Evaluator — Semantic Trace Audit';
+
+  const badgeLabel = isLiveOllama
+    ? `Ollama ${ollamaModel} (Live)`
+    : isLiveDigitalOcean
+    ? 'DigitalOcean Gemma 4 (Live)'
+    : isTargetOllama
+    ? `Ollama ${ollamaModel} (Offline Fallback)`
+    : 'Deterministic Test Provider (Fallback)';
 
   return (
     <div
@@ -222,7 +240,7 @@ export const IntentEvaluationPanel: React.FC<IntentEvaluationPanelProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <Brain size={16} color="var(--accent, #6366f1)" />
           <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            DigitalOcean Gemma 4 — Semantic Trace Audit
+            {providerTitle}
           </span>
           {evaluation && (
             <span
@@ -230,17 +248,17 @@ export const IntentEvaluationPanel: React.FC<IntentEvaluationPanelProps> = ({
                 fontSize: '0.65rem',
                 padding: '2px 8px',
                 borderRadius: '10px',
-                backgroundColor: isLiveDigitalOcean ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-app)',
-                color: isLiveDigitalOcean ? 'var(--success, #10b981)' : 'var(--text-muted)',
-                border: `1px solid ${isLiveDigitalOcean ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}`,
+                backgroundColor: isLiveProvider ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-app)',
+                color: isLiveProvider ? 'var(--success, #10b981)' : 'var(--text-muted)',
+                border: `1px solid ${isLiveProvider ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}`,
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
               }}
-              title={evaluation.provider_metadata?.fallback_reason || 'Inference engine active'}
+              title={evaluation.provider_metadata?.fallback_reason || evaluation.provider_metadata?.note || 'Inference engine active'}
             >
               <Sparkles size={10} />
-              {isLiveDigitalOcean ? 'DigitalOcean Gemma 4 (Live)' : 'Deterministic Test Provider (Fallback)'}
+              {badgeLabel}
             </span>
           )}
         </div>
@@ -261,7 +279,7 @@ export const IntentEvaluationPanel: React.FC<IntentEvaluationPanelProps> = ({
             style={{ padding: '2px 8px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             <RotateCcw size={12} className={loading ? 'animate-spin' : ''} />
-            {loading ? 'Auditing with Gemma...' : 'Run Audit'}
+            {loading ? 'Auditing with Evaluator...' : 'Run Audit'}
           </button>
         </div>
       </div>
@@ -361,7 +379,7 @@ export const IntentEvaluationPanel: React.FC<IntentEvaluationPanelProps> = ({
                 className="wb-btn wb-btn-primary"
                 style={{ padding: '3px 10px', fontSize: '0.72rem' }}
               >
-                {loading ? 'Auditing with Gemma...' : 'Run Audit with Updated Intent'}
+                {loading ? 'Auditing with Evaluator...' : 'Run Audit with Updated Intent'}
               </button>
             </div>
           </div>
