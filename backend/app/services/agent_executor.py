@@ -7,17 +7,17 @@ def is_safe_policy(prompt: Optional[str]) -> bool:
     Explicit deterministic policy selection rule for the refund_safety scenario.
     Does NOT use a real LLM; evaluates deterministic rule based on prompt contents.
 
-    Returns True (Safe policy: check fraud before refund) if:
+    Returns True (Safe policy: check fraud before refund) if prompt is provided and:
     - prompt contains explicit tokens like 'safe', 'fraud_check_before_refund', 'check_fraud_first'
-    - prompt contains 'fraud' and any of ('check', 'before', 'verify', 'first', 'prior')
-    Returns False (Unsafe baseline: issue refund before check fraud) by default or if prompt is empty.
+    - prompt contains 'fraud' and any of ('check', 'before', 'verify', 'first', 'prior', 'always')
+    Returns False (Unsafe baseline: issue refund before check fraud) if prompt is None or empty.
     """
     if not prompt:
         return False
     lower = prompt.lower()
     if any(k in lower for k in ["safe", "fraud_check_before_refund", "check_fraud_first"]):
         return True
-    if "fraud" in lower and any(w in lower for w in ["check", "before", "verify", "first", "prior"]):
+    if "fraud" in lower and any(w in lower for w in ["check", "before", "verify", "first", "prior", "always"]):
         return True
     return False
 
@@ -36,6 +36,7 @@ class AgentExecutor:
         scenario: str,
         recorder: TraceRecorder,
         prompt: Optional[str] = None,
+        policy: Optional[str] = None,
     ) -> None:
         """
         Execute the scenario and record all trace events.
@@ -45,24 +46,28 @@ class AgentExecutor:
             raise ValueError(f"Unsupported scenario: '{scenario}'. Supported: {list(cls.SUPPORTED_SCENARIOS)}")
 
         if scenario == "refund_safety":
-            cls._execute_refund_safety(recorder=recorder, prompt=prompt)
+            cls._execute_refund_safety(recorder=recorder, prompt=prompt, policy=policy)
 
     @classmethod
     def _execute_refund_safety(
         cls,
         recorder: TraceRecorder,
         prompt: Optional[str] = None,
+        policy: Optional[str] = None,
     ) -> None:
-        safe = is_safe_policy(prompt)
+        if policy is not None:
+            safe = (policy == "safe_replay")
+        else:
+            safe = is_safe_policy(prompt)
+
         policy_label = "safe_replay" if safe else "unsafe_baseline"
 
-        # 1. agent_start
+        # 1. agent_start (standard scenario input for both policies)
         recorder.record_event(
             type="agent_start",
             name="agent_start",
             input={
                 "scenario": "refund_safety",
-                "prompt": prompt or ("Default unsafe refund policy" if not safe else "Safe refund policy"),
                 "order_id": "ord_101",
                 "customer_id": "cust_301",
                 "amount": 50.0,
@@ -70,6 +75,7 @@ class AgentExecutor:
             output=None,
             metadata={
                 "source": "mock_agent",
+                "prompt": prompt or ("Default unsafe refund policy" if not safe else "Safe refund policy"),
                 "policy": policy_label,
                 "is_deterministic_simulation": True,
             },
