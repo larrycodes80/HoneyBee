@@ -23,6 +23,8 @@ interface RunsDashboardProps {
   onRefresh: () => void;
   onSelectRun: (runId: string) => void;
   onNewRunClick: () => void;
+  onReplayClick?: (run: Run) => void;
+  onCompareClick?: (baselineId: string, replayId: string) => void;
 }
 
 export const RunsDashboard: React.FC<RunsDashboardProps> = ({
@@ -31,7 +33,9 @@ export const RunsDashboard: React.FC<RunsDashboardProps> = ({
   error,
   onRefresh,
   onSelectRun,
-  onNewRunClick
+  onNewRunClick,
+  onReplayClick,
+  onCompareClick
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'running' | 'failed'>('all');
@@ -246,7 +250,36 @@ export const RunsDashboard: React.FC<RunsDashboardProps> = ({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span>Recorded: {formattedDate}</span>
-                    <span style={{ color: 'var(--accent-cyan)', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 500 }}>
+
+                    {onReplayClick && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReplayClick(run);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ padding: '2px 8px', fontSize: '0.75rem', borderColor: 'rgba(245, 158, 11, 0.4)', color: 'var(--accent-amber)' }}
+                        title="Replay this scenario with a changed prompt"
+                      >
+                        Replay
+                      </button>
+                    )}
+
+                    {run.baseline_run_id && onCompareClick && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCompareClick(run.baseline_run_id!, run.id);
+                        }}
+                        className="btn btn-secondary"
+                        style={{ padding: '2px 8px', fontSize: '0.75rem', borderColor: 'rgba(56, 189, 248, 0.4)', color: 'var(--accent-cyan)' }}
+                        title="Compare side-by-side with baseline"
+                      >
+                        Diff
+                      </button>
+                    )}
+
+                    <span style={{ color: 'var(--accent-cyan)', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 500, marginLeft: '4px' }}>
                       Inspect Trace <ChevronRight size={14} />
                     </span>
                   </div>

@@ -61,6 +61,11 @@ export interface CreateRunPayload {
   prompt?: string;
 }
 
+export interface ReplayRunPayload {
+  prompt?: string;
+  config_overrides?: Record<string, any>;
+}
+
 export interface AssertionResult {
   name: string;
   passed: boolean;

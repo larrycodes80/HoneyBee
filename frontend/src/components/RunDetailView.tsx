@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, RefreshCw, GitBranch, Cpu, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, GitBranch, Cpu, AlertCircle, CheckCircle, RotateCcw, GitCompare } from 'lucide-react';
 import type { Run, TraceEvent } from '../types';
 import { getRun } from '../lib/api';
 import { Badge } from './common/Badge';
 import { TraceTimeline } from './TraceTimeline';
 import { EventDrawer } from './EventDrawer';
+import { AssertionResultsPanel } from './assertions/AssertionResultsPanel';
 import { LoadingSkeleton } from './common/LoadingSkeleton';
 import { ErrorState } from './common/ErrorState';
 
@@ -12,12 +13,16 @@ interface RunDetailViewProps {
   runId: string;
   onBack: () => void;
   onNavigateToRun?: (id: string) => void;
+  onReplayClick?: (run: Run) => void;
+  onCompareClick?: (baselineId: string, replayId: string) => void;
 }
 
 export const RunDetailView: React.FC<RunDetailViewProps> = ({
   runId,
   onBack,
-  onNavigateToRun
+  onNavigateToRun,
+  onReplayClick,
+  onCompareClick
 }) => {
   const [run, setRun] = useState<Run | null>(null);
   const [events, setEvents] = useState<TraceEvent[]>([]);
@@ -128,6 +133,26 @@ export const RunDetailView: React.FC<RunDetailViewProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {onReplayClick && (
+              <button
+                onClick={() => onReplayClick(run)}
+                className="btn btn-primary"
+                style={{ background: 'linear-gradient(135deg, #0284c7, #f59e0b)' }}
+              >
+                <RotateCcw size={14} /> Replay This Run
+              </button>
+            )}
+
+            {run.baseline_run_id && onCompareClick && (
+              <button
+                onClick={() => onCompareClick(run.baseline_run_id!, run.id)}
+                className="btn btn-secondary"
+                style={{ borderColor: 'var(--accent-amber)', color: 'var(--accent-amber)' }}
+              >
+                <GitCompare size={14} /> Compare with Baseline
+              </button>
+            )}
+
             <button onClick={fetchTrace} className="btn btn-secondary">
               <RefreshCw size={14} /> Refresh Trace
             </button>
@@ -179,6 +204,9 @@ export const RunDetailView: React.FC<RunDetailViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Behavioral Safety Assertions Panel */}
+      <AssertionResultsPanel runId={run.id} />
 
       {/* Events Timeline */}
       <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)' }}>
