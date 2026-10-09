@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, X } from 'lucide-react';
+import { Layers, X, Cpu, EyeOff, Shield } from 'lucide-react';
 import type { TraceEvent } from '../../types';
 import { JsonTree } from '../common/JsonTree';
 
@@ -57,6 +57,30 @@ export const EventInspector: React.FC<EventInspectorProps> = ({ event, onClose }
 
       {/* Inspector Body */}
       <div className="inspector-body">
+        {/* Redaction Notice */}
+        {event.is_redacted && (
+          <div
+            style={{
+              padding: '0.5rem 0.75rem',
+              background: 'var(--warning-subtle)',
+              border: '1px solid var(--warning-border)',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: '0.75rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '6px',
+              fontSize: '0.72rem',
+              color: 'var(--warning)'
+            }}
+          >
+            <Shield size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <strong>Backend Redaction Active:</strong> Sensitive fields have been masked with [REDACTED] by
+              backend privacy rules. Hidden data is omitted according to security policies.
+            </div>
+          </div>
+        )}
+
         {/* Core Metadata Grid */}
         <div className="inspector-meta-grid">
           <div className="meta-field">
@@ -67,6 +91,34 @@ export const EventInspector: React.FC<EventInspectorProps> = ({ event, onClose }
             <span className="meta-field-label">Type</span>
             <span className="meta-field-value" style={{ color: 'var(--accent)' }}>
               {event.type}
+            </span>
+          </div>
+          <div className="meta-field">
+            <span className="meta-field-label">Instrumentation</span>
+            <span className="meta-field-value" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {event.instrumentation_type === 'outer_sdk' ? (
+                <>
+                  <Cpu size={11} color="#89ddff" />
+                  <span style={{ color: '#89ddff' }}>Outer SDK (Auto)</span>
+                </>
+              ) : (
+                <>
+                  <Layers size={11} color="#c792ea" />
+                  <span style={{ color: '#c792ea' }}>Internal (Developer)</span>
+                </>
+              )}
+            </span>
+          </div>
+          <div className="meta-field">
+            <span className="meta-field-label">Redacted</span>
+            <span className="meta-field-value">
+              {event.is_redacted ? (
+                <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <EyeOff size={11} /> Masked
+                </span>
+              ) : (
+                <span style={{ color: 'var(--text-muted)' }}>None</span>
+              )}
             </span>
           </div>
           <div className="meta-field" style={{ gridColumn: 'span 2' }}>
@@ -101,3 +153,4 @@ export const EventInspector: React.FC<EventInspectorProps> = ({ event, onClose }
     </aside>
   );
 };
+

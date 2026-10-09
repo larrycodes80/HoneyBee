@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Play, RotateCcw, GitCompare, Radio, Database } from 'lucide-react';
+import { Play, RotateCcw, GitCompare, Radio, Database, Sparkles, Activity } from 'lucide-react';
 import { checkHealth, isForcingFixtures, setForceFixtures } from '../lib/api';
 
 interface WorkbenchHeaderProps {
-  currentView: 'trace' | 'diff';
+  currentView: 'trace' | 'diff' | 'workflow';
   scenarioName?: string;
   hasDiffPair: boolean;
-  onViewChange: (view: 'trace' | 'diff') => void;
+  onViewChange: (view: 'trace' | 'diff' | 'workflow') => void;
   onNewRunClick: () => void;
   onReplayClick?: () => void;
 }
@@ -65,11 +65,18 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
         {/* View Switcher Tabs */}
         <div style={{ display: 'flex', gap: '2px', background: 'var(--bg-app)', padding: '2px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}>
           <button
+            onClick={() => onViewChange('workflow')}
+            className={`wb-btn ${currentView === 'workflow' ? 'wb-btn-secondary' : 'wb-btn-outline'}`}
+            style={{ padding: '2px 8px', fontSize: '0.72rem', border: 'none', color: currentView === 'workflow' ? 'var(--accent)' : undefined }}
+          >
+            <Sparkles size={11} /> Workflow Studio
+          </button>
+          <button
             onClick={() => onViewChange('trace')}
             className={`wb-btn ${currentView === 'trace' ? 'wb-btn-secondary' : 'wb-btn-outline'}`}
             style={{ padding: '2px 8px', fontSize: '0.72rem', border: 'none' }}
           >
-            Trace View
+            <Activity size={11} /> Trace Runs
           </button>
           {hasDiffPair && (
             <button

@@ -1,11 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Search, RotateCcw, GitCompare, RefreshCw } from 'lucide-react';
+import { Search, RotateCcw, GitCompare, RefreshCw, ChevronLeft, ChevronRight, GitBranch, Bot } from 'lucide-react';
 import type { Run } from '../../types';
 
 interface RunExplorerProps {
   runs: Run[];
   selectedRunId: string | null;
   loading: boolean;
+  totalRuns?: number;
+  limit?: number;
+  offset?: number;
+  onPageChange?: (newOffset: number) => void;
   onSelectRun: (runId: string) => void;
   onRefresh: () => void;
   onReplayRun?: (run: Run) => void;
@@ -16,6 +20,10 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
   runs,
   selectedRunId,
   loading,
+  totalRuns = runs.length,
+  limit = 50,
+  offset = 0,
+  onPageChange,
   onSelectRun,
   onRefresh,
   onReplayRun,
@@ -33,12 +41,17 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
         return (
           r.id.toLowerCase().includes(q) ||
           r.config?.prompt?.toLowerCase().includes(q) ||
-          r.config?.scenario?.toLowerCase().includes(q)
+          r.config?.scenario?.toLowerCase().includes(q) ||
+          r.agent_name?.toLowerCase().includes(q) ||
+          r.workflow_id?.toLowerCase().includes(q)
         );
       }
       return true;
     });
   }, [runs, filterType, search]);
+
+  const hasNextPage = offset + limit < totalRuns;
+  const hasPrevPage = offset > 0;
 
   return (
     <aside className="pane-explorer">
@@ -53,7 +66,7 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
           <input
             type="text"
             className="explorer-search-input"
-            placeholder="Search runs..."
+            placeholder="Search runs, agents, workflows..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -74,7 +87,7 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              {filteredRuns.length} runs
+              {totalRuns} total
             </span>
             <button
               onClick={onRefresh}
@@ -106,6 +119,10 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
               minute: '2-digit',
               second: '2-digit'
             });
+
+            const agentName = run.agent_name || run.config?.agent_name;
+            const workflowId = run.workflow_id || run.config?.workflow_id;
+            const workflowVer = run.workflow_version ?? run.config?.workflow_version;
 
             return (
               <div
@@ -188,6 +205,40 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
                   </div>
                 </div>
 
+                {/* Agent & Workflow tags if available */}
+                {(agentName || workflowId) && (
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', margin: '2px 0' }}>
+                    {agentName && (
+                      <span
+                        style={{
+                          fontSize: '0.62rem',
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--accent)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}
+                      >
+                        <Bot size={10} /> {agentName}
+                      </span>
+                    )}
+                    {workflowId && (
+                      <span
+                        style={{
+                          fontSize: '0.62rem',
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}
+                      >
+                        <GitBranch size={10} /> {workflowId} {workflowVer ? `v${workflowVer}` : ''}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="run-item-meta">
                   <span>{timeStr}</span>
                   <span>•</span>
@@ -208,6 +259,44 @@ export const RunExplorer: React.FC<RunExplorerProps> = ({
           })
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {onPageChange && totalRuns > limit && (
+        <div
+          style={{
+            padding: '6px 10px',
+            borderTop: '1px solid var(--border-default)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.7rem',
+            color: 'var(--text-muted)'
+          }}
+        >
+          <span>
+            {offset + 1}–{Math.min(offset + limit, totalRuns)} of {totalRuns}
+          </span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button
+              onClick={() => onPageChange(Math.max(0, offset - limit))}
+              disabled={!hasPrevPage}
+              className="wb-btn wb-btn-outline"
+              style={{ padding: '2px 6px', fontSize: '0.68rem' }}
+            >
+              <ChevronLeft size={11} /> Prev
+            </button>
+            <button
+              onClick={() => onPageChange(offset + limit)}
+              disabled={!hasNextPage}
+              className="wb-btn wb-btn-outline"
+              style={{ padding: '2px 6px', fontSize: '0.68rem' }}
+            >
+              Next <ChevronRight size={11} />
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };
+

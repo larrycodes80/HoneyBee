@@ -14,6 +14,9 @@ export type ChangeType = 'added' | 'removed' | 'changed';
 export interface RunConfig {
   scenario: string;
   prompt: string;
+  agent_name?: string;
+  workflow_id?: string;
+  workflow_version?: number | string;
   [key: string]: any;
 }
 
@@ -31,6 +34,9 @@ export interface Run {
   expected_workflow?: string | null;
   config: RunConfig;
   summary: RunSummary;
+  agent_name?: string;
+  workflow_id?: string | null;
+  workflow_version?: number | string | null;
 }
 
 export interface TraceEvent {
@@ -43,6 +49,8 @@ export interface TraceEvent {
   input: Record<string, any> | null;
   output: Record<string, any> | string | number | boolean | null;
   metadata: Record<string, any>;
+  is_redacted?: boolean;
+  instrumentation_type?: 'outer_sdk' | 'internal_instrumented';
 }
 
 export interface RunDetailResponse {
@@ -149,4 +157,61 @@ export interface DiffResponse {
     removed: number;
     changed: number;
   };
+}
+
+/* =========================================================================
+   Phase 4: Workflow Specifications & Interview Types
+   ========================================================================= */
+
+export type WorkflowStatus = 'draft' | 'in_interview' | 'approved' | 'rejected';
+
+export interface WorkflowSpecification {
+  required_outcomes: string[];
+  required_conditions: string[];
+  forbidden_actions: string[];
+  safety_invariants: string[];
+  acceptable_alternatives: string[];
+  preferences: string[];
+  unresolved_assumptions: string[];
+}
+
+export interface ClarificationQuestion {
+  id: string;
+  question: string;
+  context?: string;
+  category?: string;
+  answer?: string;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  version: number;
+  status: WorkflowStatus;
+  approved_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  specification: WorkflowSpecification;
+  clarification_questions: ClarificationQuestion[];
+  model_provider_status?: {
+    available: boolean;
+    provider: string;
+    error?: string;
+  };
+}
+
+export interface CreateWorkflowDraftPayload {
+  name: string;
+  description: string;
+}
+
+export interface SubmitInterviewAnswersPayload {
+  answers: Array<{ question_id: string; answer: string }>;
+}
+
+export interface UpdateWorkflowDraftPayload {
+  name?: string;
+  description?: string;
+  specification?: Partial<WorkflowSpecification>;
 }

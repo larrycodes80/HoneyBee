@@ -6,11 +6,15 @@ import { RunExplorer } from './components/workspace/RunExplorer';
 import { TimelinePane } from './components/workspace/TimelinePane';
 import { EventInspector } from './components/workspace/EventInspector';
 import { ComparisonWorkspace } from './components/diff/ComparisonWorkspace';
+import { WorkflowStudio } from './components/workflow/WorkflowStudio';
 import { NewRunModal } from './components/NewRunModal';
 import { ReplayModal } from './components/replay/ReplayModal';
 
 export function App() {
   const [runs, setRuns] = useState<Run[]>([]);
+  const [totalRuns, setTotalRuns] = useState<number>(0);
+  const [runOffset, setRunOffset] = useState<number>(0);
+  const [runLimit] = useState<number>(50);
   const [loadingRuns, setLoadingRuns] = useState<boolean>(true);
 
   // Selected State
@@ -20,8 +24,8 @@ export function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [assertions, setAssertions] = useState<AssertionResult[]>([]);
 
-  // Workspace View State
-  const [viewMode, setViewMode] = useState<'trace' | 'diff'>('trace');
+  // Workspace View State ('trace' | 'diff' | 'workflow')
+  const [viewMode, setViewMode] = useState<'trace' | 'diff' | 'workflow'>('trace');
   const [diffPair, setDiffPair] = useState<{ baselineId: string; replayId: string } | null>(null);
 
   // Modal Dialogs
@@ -29,11 +33,12 @@ export function App() {
   const [replayTargetRun, setReplayTargetRun] = useState<Run | null>(null);
 
   // Fetch runs list
-  const loadRuns = useCallback(async (selectIdAfterLoad?: string) => {
+  const loadRuns = useCallback(async (selectIdAfterLoad?: string, offsetParam = runOffset) => {
     setLoadingRuns(true);
     try {
-      const res = await listRuns();
+      const res = await listRuns({ limit: runLimit, offset: offsetParam });
       setRuns(res.items);
+      setTotalRuns(res.total ?? res.items.length);
 
       const targetId = selectIdAfterLoad || selectedRunId || (res.items.length > 0 ? res.items[0].id : null);
       if (targetId) {
@@ -50,11 +55,16 @@ export function App() {
     } finally {
       setLoadingRuns(false);
     }
-  }, [selectedRunId]);
+  }, [runLimit, runOffset, selectedRunId]);
 
   useEffect(() => {
     loadRuns();
   }, [loadRuns]);
+
+  const handlePageChange = (newOffset: number) => {
+    setRunOffset(newOffset);
+    loadRuns(undefined, newOffset);
+  };
 
   // Load details whenever selectedRunId changes
   useEffect(() => {
@@ -131,7 +141,9 @@ export function App() {
       />
 
       {/* Main Workspace Body */}
-      {viewMode === 'diff' && diffPair ? (
+      {viewMode === 'workflow' ? (
+        <WorkflowStudio />
+      ) : viewMode === 'diff' && diffPair ? (
         <ComparisonWorkspace
           baselineRunId={diffPair.baselineId}
           replayRunId={diffPair.replayId}
@@ -143,6 +155,10 @@ export function App() {
           {/* Left Pane: Run Explorer */}
           <RunExplorer
             runs={runs}
+            totalRuns={totalRuns}
+            limit={runLimit}
+            offset={runOffset}
+            onPageChange={handlePageChange}
             selectedRunId={selectedRunId}
             loading={loadingRuns}
             onSelectRun={handleSelectRun}

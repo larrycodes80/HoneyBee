@@ -7,7 +7,11 @@ import {
   ShieldAlert,
   ChevronRight,
   Terminal,
-  Clock
+  Clock,
+  Cpu,
+  Layers,
+  EyeOff,
+  GitBranch
 } from 'lucide-react';
 import type { Run, TraceEvent, AssertionResult } from '../../types';
 import { IntentEvaluationPanel } from './IntentEvaluationPanel';
@@ -97,6 +101,41 @@ export const TimelinePane: React.FC<TimelinePaneProps> = ({
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             {new Date(run.created_at).toISOString()}
           </span>
+
+          {run.agent_name && (
+            <span
+              style={{
+                fontSize: '0.72rem',
+                color: 'var(--accent)',
+                background: 'var(--accent-subtle)',
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--accent-border)'
+              }}
+            >
+              agent: {run.agent_name}
+            </span>
+          )}
+
+          {run.workflow_id && (
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-app)',
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <GitBranch size={10} color="var(--accent)" />
+              {run.workflow_id} (v{run.workflow_version ?? 1})
+            </span>
+          )}
 
           {run.baseline_run_id && (
             <span
@@ -258,6 +297,67 @@ export const TimelinePane: React.FC<TimelinePaneProps> = ({
             >
               <span className="event-step-num">#{stepStr}</span>
               <span className={`event-type-badge badge-${evt.type}`}>{evt.type}</span>
+
+              {/* Instrumentation distinction */}
+              {evt.instrumentation_type === 'outer_sdk' ? (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    fontSize: '0.62rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: '#89ddff',
+                    background: 'rgba(137, 221, 255, 0.08)',
+                    padding: '1px 5px',
+                    borderRadius: '2px',
+                    border: '1px solid rgba(137, 221, 255, 0.2)'
+                  }}
+                  title="SDK Outer-function event (captured automatically)"
+                >
+                  <Cpu size={9} /> SDK
+                </span>
+              ) : (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    fontSize: '0.62rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: '#c792ea',
+                    background: 'rgba(199, 146, 234, 0.08)',
+                    padding: '1px 5px',
+                    borderRadius: '2px',
+                    border: '1px solid rgba(199, 146, 234, 0.2)'
+                  }}
+                  title="Developer-instrumented internal event"
+                >
+                  <Layers size={9} /> Internal
+                </span>
+              )}
+
+              {/* Redacted tag */}
+              {evt.is_redacted && (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    fontSize: '0.62rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--warning)',
+                    background: 'var(--warning-subtle)',
+                    padding: '1px 5px',
+                    borderRadius: '2px',
+                    border: '1px solid var(--warning-border)'
+                  }}
+                  title="Backend redacted sensitive data"
+                >
+                  <EyeOff size={9} /> Redacted
+                </span>
+              )}
+
               <span className="event-name-text">{evt.name}</span>
               <span className="event-summary-text">{summaryStr}</span>
               <span className="event-time-text">{timeOffset}</span>
