@@ -1,0 +1,323 @@
+import uuid
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.db.session import get_db
+from app.models.run import Run
+from app.models.trace_event import TraceEvent
+from app.schemas.run import (
+    CreateRunRequest,
+    RunDetailResponse,
+    RunListResponse,
+    RunSchema,
+)
+from app.schemas.trace_event import TraceEventSchema
+from app.schemas.replay import ReplayRequest
+from app.schemas.diff import DiffResponse
+from app.schemas.assertions import AssertionResponse
+from app.services.trace_recorder import TraceRecorder
+from app.services.agent_executor import AgentExecutor, is_safe_policy
+from app.services.diff_engine import DiffEngine
+from app.services.assertion_engine import AssertionEngine
+
+router = APIRouter(prefix="/api/runs", tags=["Runs"])
+
+
+@router.post("", response_model=RunDetailResponse, status_code=status.HTTP_201_CREATED)
+def create_run(
+    body: CreateRunRequest,
+    db: Session = Depends(get_db),
+) -> RunDetailResponse:
+    # 1. Validate scenario
+    if body.scenario not in AgentExecutor.SUPPORTED_SCENARIOS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_SCENARIO",
+                "message": f"Scenario '{body.scenario}' is not supported. Supported: {list(AgentExecutor.SUPPORTED_SCENARIOS)}",
+            },
+        )
+
+    # 2. Create and persist Run with 'running' status
+    run_id = f"run_{uuid.uuid4().hex[:8]}"
+    default_prompt = "Check fraud status before issuing a refund."
+    effective_prompt = body.prompt if body.prompt is not None else default_prompt
+    policy_label = "safe_replay" if (body.prompt is not None and is_safe_policy(body.prompt)) else "unsafe_baseline"
+
+    run = Run(
+        id=run_id,
+        status="running",
+        baseline_run_id=None,
+        config={
+            "scenario": body.scenario,
+            "prompt": effective_prompt,
+            "policy": policy_label,
+        },
+        summary={
+            "event_count": 0,
+            "tool_call_count": 0,
+            "error_count": 0,
+        },
+    )
+    db.add(run)
+    db.commit()
+    db.refresh(run)
+
+    # 3. Execute scenario and record events
+    recorder = TraceRecorder(db=db, run=run)
+    try:
+        AgentExecutor.execute_scenario(
+            scenario=body.scenario,
+            recorder=recorder,
+            prompt=body.prompt,
+            policy=policy_label,
+        )
+        run.status = "completed"
+    except Exception as exc:
+        run.status = "failed"
+        recorder.record_event(
+            type="error",
+            name="execution_error",
+            input={"message": str(exc)},
+            output=None,
+            metadata={"source": "agent_executor"},
+        )
+        db.commit()
+        db.refresh(run)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "EXECUTION_ERROR",
+                "message": f"Execution failed: {exc}",
+            },
+        )
+
+    db.commit()
+    db.refresh(run)
+
+    events = recorder.get_events()
+    return RunDetailResponse(
+        run=RunSchema.model_validate(run),
+        events=[TraceEventSchema.model_validate(e) for e in events],
+    )
+
+
+@router.get("", response_model=RunListResponse)
+def list_runs(
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    db: Session = Depends(get_db),
+) -> RunListResponse:
+    total = db.query(func.count(Run.id)).scalar() or 0
+    runs = (
+        db.query(Run)
+        .order_by(Run.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return RunListResponse(
+        items=[RunSchema.model_validate(r) for r in runs],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/{run_id}", response_model=RunDetailResponse)
+def get_run(
+    run_id: str,
+    db: Session = Depends(get_db),
+) -> RunDetailResponse:
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Run '{run_id}' was not found.",
+            },
+        )
+
+    events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+
+    return RunDetailResponse(
+        run=RunSchema.model_validate(run),
+        events=[TraceEventSchema.model_validate(e) for e in events],
+    )
+
+
+@router.post("/{run_id}/replay", response_model=RunDetailResponse, status_code=status.HTTP_201_CREATED)
+def replay_run(
+    run_id: str,
+    body: ReplayRequest,
+    db: Session = Depends(get_db),
+) -> RunDetailResponse:
+    # 1. Load baseline run; verify existence
+    baseline_run = db.query(Run).filter(Run.id == run_id).first()
+    if not baseline_run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Baseline run '{run_id}' was not found.",
+            },
+        )
+
+    # 2. Derive replay configuration while leaving baseline immutable
+    scenario = baseline_run.config.get("scenario", "refund_safety")
+    if body.prompt is not None:
+        effective_prompt = body.prompt
+        policy_label = "safe_replay" if is_safe_policy(effective_prompt) else "unsafe_baseline"
+    else:
+        effective_prompt = baseline_run.config.get("prompt", "Check fraud status before issuing a refund.")
+        policy_label = baseline_run.config.get("policy", "unsafe_baseline")
+
+    replay_config = {
+        **baseline_run.config,
+        "scenario": scenario,
+        "prompt": effective_prompt,
+        "policy": policy_label,
+        **(body.config_overrides or {}),
+    }
+
+    # 3. Create new replay run linked to baseline
+    replay_id = f"run_{uuid.uuid4().hex[:8]}"
+    replay_run = Run(
+        id=replay_id,
+        status="running",
+        baseline_run_id=baseline_run.id,
+        config=replay_config,
+        summary={
+            "event_count": 0,
+            "tool_call_count": 0,
+            "error_count": 0,
+        },
+    )
+    db.add(replay_run)
+    db.commit()
+    db.refresh(replay_run)
+
+    # 4. Re-execute scenario using TraceRecorder
+    recorder = TraceRecorder(db=db, run=replay_run)
+    try:
+        AgentExecutor.execute_scenario(
+            scenario=scenario,
+            recorder=recorder,
+            prompt=effective_prompt,
+            policy=policy_label,
+        )
+        replay_run.status = "completed"
+    except Exception as exc:
+        replay_run.status = "failed"
+        recorder.record_event(
+            type="error",
+            name="replay_execution_error",
+            input={"message": str(exc)},
+            output=None,
+            metadata={"source": "replay_engine"},
+        )
+        db.commit()
+        db.refresh(replay_run)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "REPLAY_EXECUTION_ERROR",
+                "message": f"Replay execution failed: {exc}",
+            },
+        )
+
+    db.commit()
+    db.refresh(replay_run)
+
+    events = recorder.get_events()
+    return RunDetailResponse(
+        run=RunSchema.model_validate(replay_run),
+        events=[TraceEventSchema.model_validate(e) for e in events],
+    )
+
+
+@router.get("/{baseline_run_id}/diff/{replay_run_id}", response_model=DiffResponse)
+def get_run_diff(
+    baseline_run_id: str,
+    replay_run_id: str,
+    db: Session = Depends(get_db),
+) -> DiffResponse:
+    # 1. Verify existence of both runs
+    baseline_run = db.query(Run).filter(Run.id == baseline_run_id).first()
+    if not baseline_run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Baseline run '{baseline_run_id}' was not found.",
+            },
+        )
+
+    replay_run = db.query(Run).filter(Run.id == replay_run_id).first()
+    if not replay_run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Replay run '{replay_run_id}' was not found.",
+            },
+        )
+
+    # 2. Fetch ordered events
+    base_events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == baseline_run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+    rep_events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == replay_run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+
+    # 3. Compute trace diff
+    return DiffEngine.compute_diff(
+        baseline_events=base_events,
+        replay_events=rep_events,
+        baseline_run_id=baseline_run_id,
+        replay_run_id=replay_run_id,
+    )
+
+
+@router.get("/{run_id}/assertions", response_model=AssertionResponse)
+def get_run_assertions(
+    run_id: str,
+    db: Session = Depends(get_db),
+) -> AssertionResponse:
+    # 1. Verify run exists
+    run = db.query(Run).filter(Run.id == run_id).first()
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "RUN_NOT_FOUND",
+                "message": f"Run '{run_id}' was not found.",
+            },
+        )
+
+    # 2. Fetch ordered events
+    events = (
+        db.query(TraceEvent)
+        .filter(TraceEvent.run_id == run_id)
+        .order_by(TraceEvent.sequence.asc())
+        .all()
+    )
+
+    # 3. Evaluate behavioral assertions
+    return AssertionEngine.evaluate_assertions(events=events, run_id=run_id)

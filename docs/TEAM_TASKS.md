@@ -1,6 +1,6 @@
-TEAM_TASKS.md — TraceForge
+TEAM_TASKS.md — HoneyBee
 Goal
-Build TraceForge, a small, working agent replay and debugging harness for the hackathon.
+Build HoneyBee, a small, working agent replay and debugging harness for the hackathon.
 The demo must show:
 
 1. A sample agent executes and records its full trace.

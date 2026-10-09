@@ -1,4 +1,4 @@
-# API_CONTRACT.md — TraceForge
+# API_CONTRACT.md — HoneyBee
 
 **Purpose:** Shared contract for the four-person hackathon team. Frontend and backend developers should implement against this document so work can proceed in parallel.
 

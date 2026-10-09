@@ -1,8 +1,8 @@
-# TraceForge — GitHub Collaboration Policy
+# HoneyBee — GitHub Collaboration Policy
 
 **Purpose:** Keep concurrent development predictable, reduce merge conflicts, and maintain a runnable application throughout the hackathon.
 
-**Applies to:** All contributors to the TraceForge repository.
+**Applies to:** All contributors to the HoneyBee repository.
 
 ---
 
@@ -33,7 +33,7 @@ Use a lightweight branch strategy with `main` as the integration branch.
 main
 ```
 
-`main` must contain the latest integrated, runnable version of TraceForge.
+`main` must contain the latest integrated, runnable version of HoneyBee.
 
 ### Feature branches
 
@@ -118,7 +118,7 @@ chore: configure frontend tooling
 - Do not use vague messages such as `updates`, `changes`, `stuff`, or `final code`.
 - Do not combine unrelated work into one commit.
 
-A good commit answers: **What changed, and which part of TraceForge did it affect?**
+A good commit answers: **What changed, and which part of HoneyBee did it affect?**
 
 ---
 
@@ -458,7 +458,7 @@ These are target deadlines, not reasons to merge broken code. If a milestone sli
 
 ```bash
 git clone <repository-url>
-cd traceforge
+cd HoneyBee
 git switch main
 git pull --ff-only origin main
 ```
