@@ -44,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewRunClick, onHomeClick }) =>
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="brand-title">HoneyBee</span>
+              <span className="brand-title">TraceForge</span>
               <span className="brand-tag">Agent Harness</span>
             </div>
           </div>
