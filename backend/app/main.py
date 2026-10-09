@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -86,3 +86,15 @@ app.include_router(health_router)
 app.include_router(replay_router)
 app.include_router(runs_router)
 app.include_router(workflows_router)
+
+# Top-level semantic audit and sample traces endpoints
+from app.api.runs import audit_trace_endpoint, list_sample_traces
+from app.schemas.evaluation import EvaluationResponse, SampleTraceItem
+
+@app.post("/api/audit", response_model=EvaluationResponse, tags=["Audit"])
+def top_level_audit(body: EvaluationResponse = Depends(audit_trace_endpoint)):
+    return body
+
+@app.get("/api/sample-traces", response_model=list[SampleTraceItem], tags=["Audit"])
+def top_level_sample_traces():
+    return list_sample_traces()

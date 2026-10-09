@@ -21,6 +21,8 @@ class Evaluation(Base):
         nullable=False,
     )
     verdict: Mapped[str] = mapped_column(String(32), nullable=False)  # PASS, FAIL, INCONCLUSIVE
+    status: Mapped[str] = mapped_column(String(32), default="passed", nullable=False)
+    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     expected_workflow: Mapped[str] = mapped_column(Text, nullable=False)
     first_divergence_event_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     expected_behavior: Mapped[str] = mapped_column(Text, nullable=False)
@@ -30,6 +32,8 @@ class Evaluation(Base):
     suggested_correction: Mapped[str] = mapped_column(Text, nullable=False)
     limitations: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     evaluator_type: Mapped[str] = mapped_column(String(64), default="hybrid_llm", nullable=False)
+    findings: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    provider_metadata: Mapped[Optional[dict[str, Any]]] = mapped_column(JSON, nullable=True)
 
     run: Mapped["Run"] = relationship("Run", back_populates="evaluations")
 

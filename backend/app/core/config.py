@@ -36,8 +36,11 @@ class Settings(BaseSettings):
     @property
     def effective_digitalocean_key(self) -> str | None:
         key = self.digitalocean_inference_api_key or self.digitalocean_token
-        if key and key.strip() and key.strip() != "your_digitalocean_token_here":
-            return key.strip()
+        if key and key.strip():
+            k = key.strip()
+            # Do not treat sample placeholder strings as valid tokens
+            if not (k.startswith("your_") or "<" in k or k.lower() == "placeholder"):
+                return k
         return None
 
     model_config = {

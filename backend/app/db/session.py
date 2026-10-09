@@ -35,3 +35,17 @@ def init_db(target_engine=None) -> None:
             conn.commit()
     except Exception:
         pass  # Column already exists
+
+    # Safe migration: ensure new evaluation columns exist on evaluations table
+    for col_def in [
+        "ALTER TABLE evaluations ADD COLUMN status VARCHAR(32) DEFAULT 'passed'",
+        "ALTER TABLE evaluations ADD COLUMN summary TEXT",
+        "ALTER TABLE evaluations ADD COLUMN findings JSON DEFAULT '[]'",
+        "ALTER TABLE evaluations ADD COLUMN provider_metadata JSON",
+    ]:
+        try:
+            with e.connect() as conn:
+                conn.execute(text(col_def))
+                conn.commit()
+        except Exception:
+            pass

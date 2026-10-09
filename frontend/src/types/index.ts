@@ -70,6 +70,32 @@ export interface ReplayRunPayload {
 }
 
 export type EvaluationVerdict = 'PASS' | 'FAIL' | 'INCONCLUSIVE';
+export type EvaluationStatus = 'passed' | 'failed' | 'needs_review' | 'error';
+
+export interface EvaluationFinding {
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
+  category: 'safety_violation' | 'missing_outcome' | 'prerequisite_violation' | 'forbidden_action' | 'valid_alternative' | 'general';
+  explanation: string;
+  expected_behavior: string;
+  observed_behavior: string;
+  evidence_event_ids: string[];
+  recommended_correction: string;
+}
+
+export interface SampleTraceItem {
+  id: string;
+  name: string;
+  description: string;
+  expected_workflow: string;
+  scenario: string;
+  event_count: number;
+}
+
+export interface AuditRequestPayload {
+  expected_workflow?: string;
+  run_id?: string;
+  sample_trace_id?: string;
+}
 
 export interface EvaluateRunPayload {
   expected_workflow?: string;
@@ -80,6 +106,8 @@ export interface EvaluationResponse {
   run_id: string;
   created_at: string;
   verdict: EvaluationVerdict;
+  status?: EvaluationStatus;
+  summary?: string;
   expected_workflow: string;
   first_divergence_event_id?: string | null;
   expected_behavior: string;
@@ -89,6 +117,8 @@ export interface EvaluationResponse {
   suggested_correction: string;
   limitations?: string | null;
   evaluator_type: string;
+  findings?: EvaluationFinding[];
+  provider_metadata?: Record<string, any> | null;
 }
 
 export interface AssertionResult {
