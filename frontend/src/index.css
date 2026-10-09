@@ -1,35 +1,57 @@
 :root {
-  --bg-app: #0B0D12;
-  --bg-panel: #11151D;
-  --bg-panel-secondary: #171C26;
-  --bg-panel-hover: #1c2230;
-  --bg-active: #202838;
+  /* Warm Light Surface Foundations */
+  --bg-app: #F8F6F0;
+  --bg-main: #F8F6F0;
+  --bg-panel: #FFFFFF;
+  --bg-panel-secondary: #F0EDE4;
+  --bg-panel-hover: #E7E3D8;
+  --bg-active: #DFDAD0;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #FFFFFF;
+  --bg-surface-active: #F3EFE7;
 
-  --border-subtle: #1e2430;
-  --border-default: #272E3B;
-  --border-strong: #384254;
-  --border-accent: #70A7FF;
+  /* Crisp Warm Stone Borders */
+  --border-subtle: #ECE8DE;
+  --border-default: #DCD6C9;
+  --border-strong: #BBB3A2;
+  --border-accent: #C97704;
 
-  --text-primary: #E6EAF0;
-  --text-secondary: #939DAE;
-  --text-muted: #5e687a;
-  --text-inverse: #0B0D12;
+  /* Rich Warm Typography */
+  --text-primary: #211E1A;
+  --text-secondary: #5C564D;
+  --text-muted: #878072;
+  --text-inverse: #FFFFFF;
 
-  --accent: #70A7FF;
-  --accent-subtle: rgba(112, 167, 255, 0.12);
-  --accent-border: rgba(112, 167, 255, 0.3);
+  /* HoneyBee Warm Honey/Amber Brand Accents */
+  --accent: #C97704;
+  --accent-subtle: rgba(201, 119, 4, 0.10);
+  --accent-border: rgba(201, 119, 4, 0.28);
 
-  --success: #43C99A;
-  --success-subtle: rgba(67, 201, 154, 0.12);
-  --success-border: rgba(67, 201, 154, 0.3);
+  /* Warm Category & Event Tones */
+  --accent-amber: #C97704;
+  --accent-cyan: #0E7490;
+  --accent-emerald: #15803D;
+  --accent-indigo: #4F46E5;
+  --accent-purple: #7C3AED;
+  --accent-rose: #BE123C;
 
-  --error: #F07078;
-  --error-subtle: rgba(240, 112, 120, 0.12);
-  --error-border: rgba(240, 112, 120, 0.3);
+  /* Calibrated Semantic States */
+  --success: #257948;
+  --success-subtle: rgba(37, 121, 72, 0.10);
+  --success-border: rgba(37, 121, 72, 0.28);
 
-  --warning: #E6B45B;
-  --warning-subtle: rgba(230, 180, 91, 0.12);
-  --warning-border: rgba(230, 180, 91, 0.3);
+  --error: #C0392B;
+  --error-subtle: rgba(192, 57, 43, 0.10);
+  --error-border: rgba(192, 57, 43, 0.28);
+
+  --warning: #D97706;
+  --warning-subtle: rgba(217, 119, 6, 0.10);
+  --warning-border: rgba(217, 119, 6, 0.28);
+
+  /* Soft Ambient Elevation */
+  --shadow-sm: 0 1px 2px rgba(60, 48, 30, 0.05);
+  --shadow-md: 0 4px 12px rgba(60, 48, 30, 0.08), 0 1px 3px rgba(60, 48, 30, 0.04);
+  --shadow-lg: 0 10px 24px rgba(60, 48, 30, 0.10), 0 2px 6px rgba(60, 48, 30, 0.04);
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
