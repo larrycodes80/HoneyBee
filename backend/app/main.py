@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.core.config import get_settings
 from app.db.session import init_db
 from app.api.health import router as health_router
+from app.api.replay import router as replay_router
 from app.api.runs import router as runs_router
 
 settings = get_settings()
@@ -81,4 +82,5 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 # Register API routers
 app.include_router(health_router)
+app.include_router(replay_router)
 app.include_router(runs_router)
