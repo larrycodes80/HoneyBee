@@ -50,8 +50,8 @@ export const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({
     <header className="wb-header">
       <div className="wb-header-left">
         <div className="wb-brand" onClick={() => onViewChange('trace')}>
-          <div className="wb-brand-glyph">TF</div>
-          <span>TraceForge</span>
+          <div className="wb-brand-glyph">HB</div>
+          <span>HoneyBee</span>
         </div>
         <span className="wb-brand-desc">Agent Execution Debugger</span>
       </div>
