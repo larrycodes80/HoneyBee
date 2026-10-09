@@ -63,6 +63,35 @@ class AssertionEngine:
                     ),
                 )
 
+            # Verify fraud check output validity
+            output = fraud_tool_result.output
+            if output is not None and isinstance(output, dict):
+                if output.get("allowed") is False or output.get("is_fraud") is True:
+                    return AssertionResultSchema(
+                        name="fraud_check_before_refund",
+                        passed=False,
+                        message="Fraud check explicitly denied or flagged transaction prior to issue_refund.",
+                    )
+                status = str(output.get("status") or "").lower()
+                if status in ("denied", "rejected", "blocked", "failed"):
+                    return AssertionResultSchema(
+                        name="fraud_check_before_refund",
+                        passed=False,
+                        message=f"Fraud check status was '{status}' prior to issue_refund.",
+                    )
+                if status in ("completed", "done") and output.get("allowed") is not True and output.get("is_fraud") is not False:
+                    return AssertionResultSchema(
+                        name="fraud_check_before_refund",
+                        passed=False,
+                        message=f"Fraud check status '{status}' indicates execution completion, not authorization.",
+                    )
+                if output.get("error"):
+                    return AssertionResultSchema(
+                        name="fraud_check_before_refund",
+                        passed=False,
+                        message=f"Fraud check failed with error: {output.get('error')}",
+                    )
+
             # Fraud check call and result were both recorded before issue_refund
             return AssertionResultSchema(
                 name="fraud_check_before_refund",

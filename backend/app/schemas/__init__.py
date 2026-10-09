@@ -10,6 +10,14 @@ from app.schemas.run import (
 from app.schemas.replay import ReplayRequest
 from app.schemas.diff import DiffChangeSchema, DiffSummarySchema, DiffResponse
 from app.schemas.assertions import AssertionResultSchema, AssertionResponse
+from app.schemas.ingest import (
+    InitRunRequest,
+    TraceEventIngestSchema,
+    IngestEventsRequest,
+    FinalizeRunRequest,
+    IngestRunPayload,
+    IngestEventsResponse,
+)
 from app.schemas.evaluation import (
     EvaluationVerdict,
     EvaluateRequest,
@@ -45,6 +53,12 @@ __all__ = [
     "DiffResponse",
     "AssertionResultSchema",
     "AssertionResponse",
+    "InitRunRequest",
+    "TraceEventIngestSchema",
+    "IngestEventsRequest",
+    "FinalizeRunRequest",
+    "IngestRunPayload",
+    "IngestEventsResponse",
     "EvaluationVerdict",
     "EvaluateRequest",
     "EvaluationResponse",
